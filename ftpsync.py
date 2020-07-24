@@ -63,7 +63,10 @@ def load_hashes(ftp):
     except ftplib.error_perm:
         return None
     f.seek(0)
-    return json.load(f)
+    try:
+        return json.load(f)
+    except json.JSONDecodeError:
+        return None
 
 
 def save_hashes(ftp, hashes):
