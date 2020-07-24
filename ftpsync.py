@@ -67,7 +67,7 @@ def load_hashes(ftp):
 
 
 def save_hashes(ftp, hashes):
-    f = io.BytesIO(json.dumps(hashes).encode("utf8"))
+    f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
     ftp.storlines("STOR " + config.hashfile, f)
 
 
