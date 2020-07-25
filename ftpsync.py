@@ -144,7 +144,7 @@ def load_configuration():
         help="the local directory to be synchronized with the server",
     )
     parser.add_argument(
-        "--destination", "-d", default="html/test", help="the remote directory"
+        "--destination", "-d", default="html", help="the remote directory"
     )
     parser.add_argument(
         "--hashfile", default=".hashes.json", help="name of the hash file"
