@@ -175,8 +175,7 @@ def main():
         ftp.login(config.user, config.password)
         # ftp.set_debuglevel(1)
 
-        # suppress false pylint warning https://github.com/PyCQA/pylint/issues/2056
-        ftp.prot_p()  # pylint: disable=no-member
+        ftp.prot_p()
         
         ftp.cwd(config.destination)
         old_hashes = load_hashes(ftp)
