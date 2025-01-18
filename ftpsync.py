@@ -57,85 +57,113 @@ def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     return sorted([f for f in old if f not in new])
 
 
-def load_hashes(ftp: ftplib.FTP_TLS) -> dict[str, str] | None:
-    """Load the hashes from the hashfile on the server."""
-    f = io.StringIO()
-    try:
-        ftp.retrlines("RETR " + config.hashfile, f.write)
-    except ftplib.error_perm:
-        return None
-    f.seek(0)
-    try:
-        return json.load(f)
-    except json.JSONDecodeError:
-        return None
+class FtpSynchronizer:
+    """Class to manage synchronization of a local directory to a remote FTP server."""
 
+    ftp: ftplib.FTP_TLS
+    config: argparse.Namespace
 
-def save_hashes(ftp: ftplib.FTP_TLS, hashes: dict[str, str]) -> None:
-    """Save the hashes to the hashfile on the server."""
-    f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
-    ftp.storlines("STOR " + config.hashfile, f)
+    def __init__(self, ftp: ftplib.FTP_TLS, config: argparse.Namespace) -> None:
+        """Create a synchronizer with the given FTP client and configuration."""
+        self.ftp = ftp
+        self.config = config
 
-
-def delete_contents(ftp: ftplib.FTP_TLS, path: str) -> None:
-    """Delete the contents of the directory at path."""
-    for name, facts in ftp.mlsd(path, facts=["type"]):
-        subpath = os.path.join(path, name)
-        if facts["type"] == "file":
-            print("Delete:", subpath)
-            ftp.delete(subpath)
-        elif facts["type"] == "dir":
-            delete_contents(ftp, subpath)
-            print("Delete dir:", subpath)
-            ftp.rmd(subpath)
-
-
-def create_parent_folder(ftp: ftplib.FTP_TLS, path: str) -> None:
-    """Create the parent folder for path, if it doesn't exist yet."""
-    folder, _ = os.path.split(path)
-    if folder:
+    def load_hashes(self) -> dict[str, str] | None:
+        """Load the hashes from the hashfile on the server."""
+        f = io.StringIO()
         try:
-            create_parent_folder(ftp, folder)
-            ftp.mkd(folder)
+            self.ftp.retrlines("RETR " + self.config.hashfile, f.write)
         except ftplib.error_perm:
-            pass
+            return None
+        f.seek(0)
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return None
 
 
-def upload_files(ftp: ftplib.FTP_TLS, paths: list[str]) -> None:
-    """Upload the given files to the server."""
-    for path in paths:
-        create_parent_folder(ftp, path)
-        with open(path, "rb") as file:
-            print("Upload:", path)
-            ftp.storbinary("STOR " + path, file)
+    def save_hashes(self, hashes: dict[str, str]) -> None:
+        """Save the hashes to the hashfile on the server."""
+        f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
+        self.ftp.storlines("STOR " + self.config.hashfile, f)
 
 
-def upload_all(ftp: ftplib.FTP_TLS) -> None:
-    """Upload all files to the server, ignoring the hashes.
-
-    **Warning**: this deletes the previous content!
-    """
-    delete_contents(ftp, "")
-    new_hashes = folder_hashes()
-    paths = new_files(new_hashes, {})
-    upload_files(ftp, paths)
-    save_hashes(ftp, new_hashes)
-
-
-def upload_changed(ftp: ftplib.FTP_TLS, old_hashes: dict[str, str]) -> None:
-    """Upload all changes to the server, mirroring the local content."""
-    ftp.delete(config.hashfile)
-    new_hashes = folder_hashes()
-    paths = new_files(new_hashes, old_hashes)
-    upload_files(ftp, paths)
-    for path in deleted_files(new_hashes, old_hashes):
-        print("Delete:", path)
-        ftp.delete(path)
-    save_hashes(ftp, new_hashes)
+    def delete_contents(self, path: str) -> None:
+        """Delete the contents of the directory at path."""
+        for name, facts in self.ftp.mlsd(path, facts=["type"]):
+            subpath = os.path.join(path, name)
+            if facts["type"] == "file":
+                print("Delete:", subpath)
+                self.ftp.delete(subpath)
+            elif facts["type"] == "dir":
+                self.delete_contents(subpath)
+                print("Delete dir:", subpath)
+                self.ftp.rmd(subpath)
 
 
-def load_configuration(args: list[str]) -> None:
-    """Load the configuration settings and store them in the global config."""
+    def create_parent_folder(self, path: str) -> None:
+        """Create the parent folder for path, if it doesn't exist yet."""
+        folder, _ = os.path.split(path)
+        if folder:
+            try:
+                self.create_parent_folder(folder)
+                self.ftp.mkd(folder)
+            except ftplib.error_perm:
+                pass
+
+
+    def upload_files(self, paths: list[str]) -> None:
+        """Upload the given files to the server."""
+        for path in paths:
+            self.create_parent_folder(path)
+            with open(path, "rb") as file:
+                print("Upload:", path)
+                self.ftp.storbinary("STOR " + path, file)
+
+
+    def upload_all(self) -> None:
+        """Upload all files to the server, ignoring the hashes.
+
+        **Warning**: this deletes the previous content!
+        """
+        self.delete_contents("")
+        new_hashes = folder_hashes()
+        paths = new_files(new_hashes, {})
+        self.upload_files(paths)
+        self.save_hashes(new_hashes)
+
+
+    def upload_changed(self, old_hashes: dict[str, str]) -> None:
+        """Upload all changes to the server, mirroring the local content."""
+        self.ftp.delete(self.config.hashfile)
+        new_hashes = folder_hashes()
+        paths = new_files(new_hashes, old_hashes)
+        self.upload_files(paths)
+        for path in deleted_files(new_hashes, old_hashes):
+            print("Delete:", path)
+            self.ftp.delete(path)
+        self.save_hashes(new_hashes)
+
+
+    def run(self) -> None:
+        """Run the synchronization."""
+        self.ftp.connect(self.config.server)
+        self.ftp.login(self.config.user, self.config.password)
+            # self.ftp.set_debuglevel(1)
+
+        self.ftp.prot_p()
+
+        self.ftp.cwd(self.config.destination)
+        old_hashes = self.load_hashes()
+        if old_hashes is None:
+            print("No hash file found. Performing full upload")
+            self.upload_all()
+        else:
+            print("Synchronizing changes")
+            self.upload_changed(old_hashes)
+
+def load_configuration(args: list[str]) -> argparse.Namespace:
+    """Load the configuration settings."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("server", help="The FTP host name")
     parser.add_argument("--user", "-u", help="The FTP username")
@@ -162,7 +190,7 @@ def load_configuration(args: list[str]) -> None:
         action="store_true",
         help="read credentials from .netrc file",
     )
-    global config
+
     config = parser.parse_args(args=args)
 
     if config.netrc:
@@ -178,27 +206,16 @@ def load_configuration(args: list[str]) -> None:
             )
         config.user = user
         config.password = password
-
+    return config
 
 def main(args: list[str]) -> None:
     """Execute the main program."""
-    load_configuration(args)
+    config = load_configuration(args)
     os.chdir(config.source)
     with ftplib.FTP_TLS() as ftp:
-        ftp.connect(config.server)
-        ftp.login(config.user, config.password)
-        # ftp.set_debuglevel(1)
+        sychronizer = FtpSynchronizer(ftp, config)
+        sychronizer.run()
 
-        ftp.prot_p()
-
-        ftp.cwd(config.destination)
-        old_hashes = load_hashes(ftp)
-        if old_hashes is None:
-            print("No hash file found. Performing full upload")
-            upload_all(ftp)
-        else:
-            print("Synchronizing changes")
-            upload_changed(ftp, old_hashes)
 
 
 if __name__ == "__main__":
