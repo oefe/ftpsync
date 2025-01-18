@@ -213,7 +213,7 @@ def main(args: list[str]) -> None:
     """Execute the main program."""
     config = load_configuration(args)
     os.chdir(config.source)
-    with ftplib.FTP_TLS() as ftp:
+    with ftplib.FTP_TLS() as ftp:  # noqa: S321 (ftp considered insecure. We use TLS, so should be OK.)
         sychronizer = FtpSynchronizer(ftp, config)
         sychronizer.run()
 
