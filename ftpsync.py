@@ -20,13 +20,13 @@ import os
 import os.path
 
 
-def file_hash(filepath):
+def file_hash(filepath: str) -> str:
     """Calculate the he sha256 hash for the file at filepath."""
     with open(filepath, "rb") as file:
         return hashlib.sha256(file.read()).hexdigest()
 
 
-def folder_hashes():
+def folder_hashes() -> dict[str, str]:
     """Calculate hashes for all files in the current directory.
 
     Return a dict mapping the filenames to their hashes.
@@ -39,7 +39,7 @@ def folder_hashes():
     return result
 
 
-def new_files(new, old):
+def new_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     """Determine the paths of all new and updated files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
@@ -48,7 +48,7 @@ def new_files(new, old):
     return [f for (f, h) in new.items() if h != old.get(f)]
 
 
-def deleted_files(new, old):
+def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     """Determine the paths of all deleted files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
@@ -57,7 +57,7 @@ def deleted_files(new, old):
     return [f for f in old if f not in new]
 
 
-def load_hashes(ftp):
+def load_hashes(ftp: ftplib.FTP_TLS) -> dict[str, str] | None:
     f = io.StringIO()
     try:
         ftp.retrlines("RETR " + config.hashfile, f.write)
@@ -70,12 +70,12 @@ def load_hashes(ftp):
         return None
 
 
-def save_hashes(ftp, hashes):
+def save_hashes(ftp: ftplib.FTP_TLS, hashes: dict[str, str]) -> None:
     f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
     ftp.storlines("STOR " + config.hashfile, f)
 
 
-def files_on_server(ftp, path=""):
+def files_on_server(ftp: ftplib.FTP_TLS, path: str="") -> list[str]:
     content = list(ftp.mlsd(path, facts=["type"]))
     files = [path + "/" + name for (name, facts) in content if facts["type"] == "file"]
     folders = [path + "/" + name for (name, facts) in content if facts["type"] == "dir"]
@@ -83,7 +83,7 @@ def files_on_server(ftp, path=""):
     return list(itertools.chain(files, *subfiles))
 
 
-def delete_contents(ftp, path):
+def delete_contents(ftp: ftplib.FTP_TLS, path: str) -> None:
     """Delete the contents of the directory at path."""
     for name, facts in ftp.mlsd(path, facts=["type"]):
         subpath = os.path.join(path, name)
@@ -96,7 +96,7 @@ def delete_contents(ftp, path):
             ftp.rmd(subpath)
 
 
-def create_parent_folder(ftp, path):
+def create_parent_folder(ftp: ftplib.FTP_TLS, path: str) -> None:
     folder, _ = os.path.split(path)
     if folder:
         try:
@@ -106,7 +106,7 @@ def create_parent_folder(ftp, path):
             pass
 
 
-def upload_files(ftp, paths):
+def upload_files(ftp: ftplib.FTP_TLS, paths: list[str]) -> None:
     for path in paths:
         create_parent_folder(ftp, path)
         with open(path, "rb") as file:
@@ -114,7 +114,7 @@ def upload_files(ftp, paths):
             ftp.storbinary("STOR " + path, file)
 
 
-def upload_all(ftp):
+def upload_all(ftp: ftplib.FTP_TLS) -> None:
     delete_contents(ftp, "")
     new_hashes = folder_hashes()
     paths = new_files(new_hashes, {})
@@ -122,7 +122,7 @@ def upload_all(ftp):
     save_hashes(ftp, new_hashes)
 
 
-def upload_changed(ftp, old_hashes):
+def upload_changed(ftp: ftplib.FTP_TLS, old_hashes: dict[str, str]) -> None:
     ftp.delete(config.hashfile)
     new_hashes = folder_hashes()
     paths = new_files(new_hashes, old_hashes)
@@ -133,7 +133,7 @@ def upload_changed(ftp, old_hashes):
     save_hashes(ftp, new_hashes)
 
 
-def load_configuration():
+def load_configuration() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("server", help="The FTP host name")
     parser.add_argument("--user", "-u", help="The FTP username")
@@ -170,7 +170,7 @@ def load_configuration():
         config.password = password
 
 
-def main():
+def main() -> None:
     load_configuration()
     os.chdir(config.source)
     with ftplib.FTP_TLS() as ftp:
