@@ -58,6 +58,7 @@ def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
 
 
 def load_hashes(ftp: ftplib.FTP_TLS) -> dict[str, str] | None:
+    """Load the hashes from the hashfile on the server."""
     f = io.StringIO()
     try:
         ftp.retrlines("RETR " + config.hashfile, f.write)
@@ -71,11 +72,13 @@ def load_hashes(ftp: ftplib.FTP_TLS) -> dict[str, str] | None:
 
 
 def save_hashes(ftp: ftplib.FTP_TLS, hashes: dict[str, str]) -> None:
+    """Save the hashes to the hashfile on the server."""
     f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
     ftp.storlines("STOR " + config.hashfile, f)
 
 
 def files_on_server(ftp: ftplib.FTP_TLS, path: str="") -> list[str]:
+    """Recursively list all files on the server."""
     content = list(ftp.mlsd(path, facts=["type"]))
     files = [path + "/" + name for (name, facts) in content if facts["type"] == "file"]
     folders = [path + "/" + name for (name, facts) in content if facts["type"] == "dir"]
@@ -97,6 +100,7 @@ def delete_contents(ftp: ftplib.FTP_TLS, path: str) -> None:
 
 
 def create_parent_folder(ftp: ftplib.FTP_TLS, path: str) -> None:
+    """Create the parent folder for path, if it doesn't exist yet."""
     folder, _ = os.path.split(path)
     if folder:
         try:
@@ -107,6 +111,7 @@ def create_parent_folder(ftp: ftplib.FTP_TLS, path: str) -> None:
 
 
 def upload_files(ftp: ftplib.FTP_TLS, paths: list[str]) -> None:
+    """Upload the given files to the server."""
     for path in paths:
         create_parent_folder(ftp, path)
         with open(path, "rb") as file:
@@ -115,6 +120,10 @@ def upload_files(ftp: ftplib.FTP_TLS, paths: list[str]) -> None:
 
 
 def upload_all(ftp: ftplib.FTP_TLS) -> None:
+    """Upload all files to the server, ignoring the hashes.
+
+    **Warning**: this deletes the previous content!
+    """
     delete_contents(ftp, "")
     new_hashes = folder_hashes()
     paths = new_files(new_hashes, {})
@@ -123,6 +132,7 @@ def upload_all(ftp: ftplib.FTP_TLS) -> None:
 
 
 def upload_changed(ftp: ftplib.FTP_TLS, old_hashes: dict[str, str]) -> None:
+    """Upload all changes to the server, mirroring the local content."""
     ftp.delete(config.hashfile)
     new_hashes = folder_hashes()
     paths = new_files(new_hashes, old_hashes)
@@ -134,6 +144,7 @@ def upload_changed(ftp: ftplib.FTP_TLS, old_hashes: dict[str, str]) -> None:
 
 
 def load_configuration() -> None:
+    """Load the configuration settings and store them in the global config."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("server", help="The FTP host name")
     parser.add_argument("--user", "-u", help="The FTP username")
@@ -171,6 +182,7 @@ def load_configuration() -> None:
 
 
 def main() -> None:
+    """Execute the main program."""
     load_configuration()
     os.chdir(config.source)
     with ftplib.FTP_TLS() as ftp:
