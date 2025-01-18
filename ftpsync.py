@@ -149,7 +149,7 @@ class FtpSynchronizer:
         """Run the synchronization."""
         self.ftp.connect(self.config.server)
         self.ftp.login(self.config.user, self.config.password)
-            # self.ftp.set_debuglevel(1)
+        self.ftp.set_debuglevel(self.config.verbosity)
 
         self.ftp.prot_p()
 
@@ -190,7 +190,13 @@ def load_configuration(args: list[str]) -> argparse.Namespace:
         action="store_true",
         help="read credentials from .netrc file",
     )
-
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        action="count",
+        default=0,
+        help="increase output verbosity",
+    )
     config = parser.parse_args(args=args)
 
     if config.netrc:
