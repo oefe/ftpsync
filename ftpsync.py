@@ -21,13 +21,13 @@ import os.path
 
 
 def file_hash(filepath):
-    """The sha256 hash for the file at filepath"""
+    """Calculate the he sha256 hash for the file at filepath."""
     with open(filepath, "rb") as file:
         return hashlib.sha256(file.read()).hexdigest()
 
 
 def folder_hashes():
-    """Calculate hashes for all files in the current directory
+    """Calculate hashes for all files in the current directory.
 
     Return a dict mapping the filenames to their hashes.
     """
@@ -40,7 +40,7 @@ def folder_hashes():
 
 
 def new_files(new, old):
-    """The paths of all new and updated files.
+    """Determine the paths of all new and updated files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)
@@ -49,7 +49,7 @@ def new_files(new, old):
 
 
 def deleted_files(new, old):
-    """The paths of all deleted files.
+    """Determine the paths of all deleted files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)
