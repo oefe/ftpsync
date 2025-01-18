@@ -13,7 +13,6 @@ import argparse
 import ftplib
 import hashlib
 import io
-import itertools
 import json
 import netrc
 import os
