@@ -62,7 +62,7 @@ git commit -a -m "Add deployment via ftpsync"
 
 Your GitHub Actions workflow should now deploy your site automatically.
 
-THhe first deployment may take a while, as `ftpsync` has to upload the entire site. Futhre deployments should be much faster,
+The first deployment may take a while, as `ftpsync` has to upload the entire site. Future deployments should be much faster,
 as `ftpsync` will upload only new and changed files.
 
 ### Example workflow
