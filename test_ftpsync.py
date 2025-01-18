@@ -35,7 +35,7 @@ def test_filehash() -> None:
 def test_filehash_raises() -> None:
     """Test that filehash with a nonexisting file raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
-        file_hash("This file doesn't exists")
+        file_hash("This file doesn't exist")
 
 
 def test_folder_hashes() -> None:
