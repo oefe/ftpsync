@@ -18,6 +18,7 @@ import json
 import netrc
 import os
 import os.path
+import sys
 
 
 def file_hash(filepath: str) -> str:
@@ -143,7 +144,7 @@ def upload_changed(ftp: ftplib.FTP_TLS, old_hashes: dict[str, str]) -> None:
     save_hashes(ftp, new_hashes)
 
 
-def load_configuration() -> None:
+def load_configuration(args: list[str]) -> None:
     """Load the configuration settings and store them in the global config."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("server", help="The FTP host name")
@@ -165,7 +166,7 @@ def load_configuration() -> None:
         "--netrc", action="store_true", help="read credentials from .netrc file",
     )
     global config
-    config = parser.parse_args()
+    config = parser.parse_args(args=args)
 
     if config.netrc:
         content = netrc.netrc()
@@ -182,9 +183,9 @@ def load_configuration() -> None:
         config.password = password
 
 
-def main() -> None:
+def main(args: list[str]) -> None:
     """Execute the main program."""
-    load_configuration()
+    load_configuration(args)
     os.chdir(config.source)
     with ftplib.FTP_TLS() as ftp:
         ftp.connect(config.server)
@@ -203,4 +204,5 @@ def main() -> None:
             upload_changed(ftp, old_hashes)
 
 
-main()
+if __name__ == "__main__":
+    main(sys.argv)
