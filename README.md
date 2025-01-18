@@ -47,7 +47,7 @@ This should come after the build and tests steps.
 - Replace "myself" with your FTP username.
 
 - Depending on your build process, you may also have to specify the source directory using the `--source` option.
-The default ("public") is suitable for the [Hugo](gohugo.io) static site generator.
+The default ("public") is suitable for the [Hugo](https://gohugo.io) static site generator.
 
 - Depending on your hosting provider, you may also have to specify the destination directory using the `--destination` option.
 The default is "html".
