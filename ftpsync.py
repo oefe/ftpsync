@@ -46,7 +46,7 @@ def new_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)
     """
-    return [f for (f, h) in new.items() if h != old.get(f)]
+    return sorted([f for (f, h) in new.items() if h != old.get(f)])
 
 
 def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
@@ -55,7 +55,7 @@ def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)
     """
-    return [f for f in old if f not in new]
+    return sorted([f for f in old if f not in new])
 
 
 def load_hashes(ftp: ftplib.FTP_TLS) -> dict[str, str] | None:
