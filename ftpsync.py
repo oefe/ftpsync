@@ -81,12 +81,10 @@ class FtpSynchronizer:
         except json.JSONDecodeError:
             return None
 
-
     def save_hashes(self, hashes: dict[str, str]) -> None:
         """Save the hashes to the hashfile on the server."""
         f = io.BytesIO(json.dumps(hashes, indent=2).encode("utf8"))
         self.ftp.storlines("STOR " + self.config.hashfile, f)
-
 
     def delete_contents(self, path: str) -> None:
         """Delete the contents of the directory at path."""
@@ -100,7 +98,6 @@ class FtpSynchronizer:
                 print("Delete dir:", subpath)
                 self.ftp.rmd(subpath)
 
-
     def create_parent_folder(self, path: str) -> None:
         """Create the parent folder for path, if it doesn't exist yet."""
         folder, _ = os.path.split(path)
@@ -111,7 +108,6 @@ class FtpSynchronizer:
             except ftplib.error_perm:
                 pass
 
-
     def upload_files(self, paths: list[str]) -> None:
         """Upload the given files to the server."""
         for path in paths:
@@ -119,7 +115,6 @@ class FtpSynchronizer:
             with open(path, "rb") as file:
                 print("Upload:", path)
                 self.ftp.storbinary("STOR " + path, file)
-
 
     def upload_all(self) -> None:
         """Upload all files to the server, ignoring the hashes.
@@ -132,7 +127,6 @@ class FtpSynchronizer:
         self.upload_files(paths)
         self.save_hashes(new_hashes)
 
-
     def upload_changed(self, old_hashes: dict[str, str]) -> None:
         """Upload all changes to the server, mirroring the local content."""
         self.ftp.delete(self.config.hashfile)
@@ -143,7 +137,6 @@ class FtpSynchronizer:
             print("Delete:", path)
             self.ftp.delete(path)
         self.save_hashes(new_hashes)
-
 
     def run(self) -> None:
         """Run the synchronization."""
@@ -161,6 +154,7 @@ class FtpSynchronizer:
         else:
             print("Synchronizing changes")
             self.upload_changed(old_hashes)
+
 
 def load_configuration(args: list[str]) -> argparse.Namespace:
     """Load the configuration settings."""
@@ -214,6 +208,7 @@ def load_configuration(args: list[str]) -> argparse.Namespace:
         config.password = password
     return config
 
+
 def main(args: list[str]) -> None:
     """Execute the main program."""
     config = load_configuration(args)
@@ -221,7 +216,6 @@ def main(args: list[str]) -> None:
     with ftplib.FTP_TLS() as ftp:
         sychronizer = FtpSynchronizer(ftp, config)
         sychronizer.run()
-
 
 
 if __name__ == "__main__":
