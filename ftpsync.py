@@ -54,7 +54,7 @@ def deleted_files(new, old):
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)
     """
-    return [f for f in old.keys() if f not in new]
+    return [f for f in old if f not in new]
 
 
 def load_hashes(ftp):
