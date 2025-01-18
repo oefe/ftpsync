@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-    A caching website uploader using FTPS.
-    
-    The current state of the site is recorded in a statefile. Thus, after a minor
-    change to the site, only the changed files have to be uploaded.
-    The statefile contains a checksum (sha1 digest) for each file. Thus,
-    mere touching a file, or regenerating it with identical contents won't
-    trigger an upload.
+A caching website uploader using FTPS.
+
+The current state of the site is recorded in a statefile. Thus, after a minor
+change to the site, only the changed files have to be uploaded.
+The statefile contains a checksum (sha1 digest) for each file. Thus,
+mere touching a file, or regenerating it with identical contents won't
+trigger an upload.
 """
 
 import argparse
@@ -30,7 +30,7 @@ def file_hash(filepath):
 
 def folder_hashes():
     """Calculate hashes for all files in the current directory
-    
+
     Return a dict mapping the filenames to their hashes."""
     result = {}
     for dirpath, _, filenames in os.walk("."):
@@ -42,7 +42,7 @@ def folder_hashes():
 
 def new_files(new, old):
     """The paths of all new and updated files.
-    
+
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)"""
     return [f for (f, h) in new.items() if h != old.get(f)]
@@ -50,7 +50,7 @@ def new_files(new, old):
 
 def deleted_files(new, old):
     """The paths of all deleted files.
-    
+
     new and old are folder hashes representing the new state (i.e. the local copy)
     and old state (i.e. what is currently on the web config.server)"""
     return [f for f in old.keys() if f not in new]
@@ -162,7 +162,9 @@ def load_configuration():
             parser.error(f"Found no credentials for {config.server} in .netrc")
         (user, _, password) = authenticators
         if config.user and user != config.user:
-            parser.error(f"Command line user name and.netrc username for {config.server} do not match")
+            parser.error(
+                f"Command line user name and.netrc username for {config.server} do not match"
+            )
         config.user = user
         config.password = password
 
@@ -176,7 +178,7 @@ def main():
         # ftp.set_debuglevel(1)
 
         ftp.prot_p()
-        
+
         ftp.cwd(config.destination)
         old_hashes = load_hashes(ftp)
         if old_hashes is None:
