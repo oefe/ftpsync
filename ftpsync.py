@@ -78,15 +78,6 @@ def save_hashes(ftp: ftplib.FTP_TLS, hashes: dict[str, str]) -> None:
     ftp.storlines("STOR " + config.hashfile, f)
 
 
-def files_on_server(ftp: ftplib.FTP_TLS, path: str="") -> list[str]:
-    """Recursively list all files on the server."""
-    content = list(ftp.mlsd(path, facts=["type"]))
-    files = [path + "/" + name for (name, facts) in content if facts["type"] == "file"]
-    folders = [path + "/" + name for (name, facts) in content if facts["type"] == "dir"]
-    subfiles = [files_on_server(ftp, path) for path in folders]
-    return list(itertools.chain(files, *subfiles))
-
-
 def delete_contents(ftp: ftplib.FTP_TLS, path: str) -> None:
     """Delete the contents of the directory at path."""
     for name, facts in ftp.mlsd(path, facts=["type"]):
@@ -157,13 +148,20 @@ def load_configuration(args: list[str]) -> None:
         help="the local directory to be synchronized with the server",
     )
     parser.add_argument(
-        "--destination", "-d", default="html", help="the remote directory",
+        "--destination",
+        "-d",
+        default="html",
+        help="the remote directory",
     )
     parser.add_argument(
-        "--hashfile", default=".hashes.json", help="name of the hash file",
+        "--hashfile",
+        default=".hashes.json",
+        help="name of the hash file",
     )
     parser.add_argument(
-        "--netrc", action="store_true", help="read credentials from .netrc file",
+        "--netrc",
+        action="store_true",
+        help="read credentials from .netrc file",
     )
     global config
     config = parser.parse_args(args=args)
@@ -177,7 +175,7 @@ def load_configuration(args: list[str]) -> None:
         if config.user and user != config.user:
             parser.error(
                 f"Command line user name and.netrc username for {config.server}"
-                 " do not match",
+                " do not match",
             )
         config.user = user
         config.password = password
