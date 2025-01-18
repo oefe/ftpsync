@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-"""
-A caching website uploader using FTPS.
+"""A caching website uploader using FTPS.
 
 The current state of the site is recorded in a statefile. Thus, after a minor
 change to the site, only the changed files have to be uploaded.
@@ -31,7 +29,8 @@ def file_hash(filepath):
 def folder_hashes():
     """Calculate hashes for all files in the current directory
 
-    Return a dict mapping the filenames to their hashes."""
+    Return a dict mapping the filenames to their hashes.
+    """
     result = {}
     for dirpath, _, filenames in os.walk("."):
         for name in filenames:
@@ -44,7 +43,8 @@ def new_files(new, old):
     """The paths of all new and updated files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
-    and old state (i.e. what is currently on the web config.server)"""
+    and old state (i.e. what is currently on the web config.server)
+    """
     return [f for (f, h) in new.items() if h != old.get(f)]
 
 
@@ -52,7 +52,8 @@ def deleted_files(new, old):
     """The paths of all deleted files.
 
     new and old are folder hashes representing the new state (i.e. the local copy)
-    and old state (i.e. what is currently on the web config.server)"""
+    and old state (i.e. what is currently on the web config.server)
+    """
     return [f for f in old.keys() if f not in new]
 
 
@@ -144,13 +145,13 @@ def load_configuration():
         help="the local directory to be synchronized with the server",
     )
     parser.add_argument(
-        "--destination", "-d", default="html", help="the remote directory"
+        "--destination", "-d", default="html", help="the remote directory",
     )
     parser.add_argument(
-        "--hashfile", default=".hashes.json", help="name of the hash file"
+        "--hashfile", default=".hashes.json", help="name of the hash file",
     )
     parser.add_argument(
-        "--netrc", action="store_true", help="read credentials from .netrc file"
+        "--netrc", action="store_true", help="read credentials from .netrc file",
     )
     global config
     config = parser.parse_args()
@@ -163,7 +164,7 @@ def load_configuration():
         (user, _, password) = authenticators
         if config.user and user != config.user:
             parser.error(
-                f"Command line user name and.netrc username for {config.server} do not match"
+                f"Command line user name and.netrc username for {config.server} do not match",
             )
         config.user = user
         config.password = password
