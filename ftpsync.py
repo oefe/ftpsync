@@ -175,7 +175,8 @@ def load_configuration() -> None:
         (user, _, password) = authenticators
         if config.user and user != config.user:
             parser.error(
-                f"Command line user name and.netrc username for {config.server} do not match",
+                f"Command line user name and.netrc username for {config.server}"
+                 " do not match",
             )
         config.user = user
         config.password = password
