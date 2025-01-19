@@ -20,6 +20,7 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "COM812", # missing trailing comma – ruff format recommends to disable it
     "D203", # incompatible with D211
     "D213", # incompatible with D213
     "T201", # print statements
