@@ -18,12 +18,12 @@ import netrc
 import os
 import os.path
 import sys
+from pathlib import Path
 
 
-def file_hash(filepath: str) -> str:
+def file_hash(filepath: Path) -> str:
     """Calculate the he sha256 hash for the file at filepath."""
-    with open(filepath, "rb") as file:
-        return hashlib.sha256(file.read()).hexdigest()
+    return hashlib.sha256(filepath.read_bytes()).hexdigest()
 
 
 def folder_hashes() -> dict[str, str]:
@@ -32,10 +32,10 @@ def folder_hashes() -> dict[str, str]:
     Return a dict mapping the filenames to their hashes.
     """
     result = {}
-    for dirpath, _, filenames in os.walk("."):
+    for dirpath, _, filenames in Path().walk():
         for name in filenames:
-            path = os.path.join(dirpath, name)
-            result[path] = file_hash(path)
+            path = dirpath / name
+            result[str(path)] = file_hash(path)
     return result
 
 
@@ -56,6 +56,18 @@ def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     """
     return sorted([f for f in old if f not in new])
 
+def normalize_paths(hashes: dict[str, str]) -> dict[str, str]:
+    """Strip leading './' from the paths in hashes.
+
+    Old versions of ftpsync used to store paths with this prefix.
+    While the paths with and without prefix are logically equivalent,
+    we must normalize them, otherwise we would first upload all files
+    and them delete them.
+    This would effectively wipe out all content.
+    Worse, because the new hashfile indicates that the files are present,
+    further runs of ftpsync wouldn't even restore the data.
+    """
+    return {k.removeprefix("./"): v for k, v in hashes.items()}
 
 class FtpSynchronizer:
     """Class to manage synchronization of a local directory to a remote FTP server."""
@@ -77,7 +89,7 @@ class FtpSynchronizer:
             return None
         f.seek(0)
         try:
-            return json.load(f)
+            return normalize_paths(json.load(f))
         except json.JSONDecodeError:
             return None
 
@@ -89,7 +101,7 @@ class FtpSynchronizer:
     def delete_contents(self, path: str) -> None:
         """Delete the contents of the directory at path."""
         for name, facts in self.ftp.mlsd(path, facts=["type"]):
-            subpath = os.path.join(path, name)
+            subpath = str(Path(path) / name)
             if facts["type"] == "file":
                 print("Delete:", subpath)
                 self.ftp.delete(subpath)
@@ -112,7 +124,7 @@ class FtpSynchronizer:
         """Upload the given files to the server."""
         for path in paths:
             self.create_parent_folder(path)
-            with open(path, "rb") as file:
+            with Path(path).open("rb") as file:
                 print("Upload:", path)
                 self.ftp.storbinary("STOR " + path, file)
 

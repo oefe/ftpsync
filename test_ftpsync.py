@@ -19,10 +19,10 @@ LICENSE_HASH = "2f3a98ffc7e14d7476db1fcc4f2ed041c8d9050f1ced14355f0d653cd5d5d24c
 
 TEST_DATA_FOLDER = "test-data"
 TEST_DATA_HASHES = {
-    "./a": "a5b2de337a986e7b9c1d178b7ed171b6cf912d05ab69c4aeca4e7e7665bfacb2",
-    "./b": "c5e1064872056c435c0aa2239a3c11bdbb32536615cef6a5a412fdb7e08c5f76",
-    "./folder/c": "92b735e707afcfa9ac4ba9017a2a633f72d3f8901f309adf1052eeed375bb1b5",
-    "./folder/sub/d": "6b5c8a22ec39c76fb504f5b377d43ed67008ef3407df29b111b5dcbb15a8c986",
+    "a": "a5b2de337a986e7b9c1d178b7ed171b6cf912d05ab69c4aeca4e7e7665bfacb2",
+    "b": "c5e1064872056c435c0aa2239a3c11bdbb32536615cef6a5a412fdb7e08c5f76",
+    "folder/c": "92b735e707afcfa9ac4ba9017a2a633f72d3f8901f309adf1052eeed375bb1b5",
+    "folder/sub/d": "6b5c8a22ec39c76fb504f5b377d43ed67008ef3407df29b111b5dcbb15a8c986",
 }
 
 
@@ -35,7 +35,7 @@ def test_filehash() -> None:
 def test_filehash_raises() -> None:
     """Test that filehash with a nonexisting file raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
-        file_hash("This file doesn't exist")
+        file_hash(Path("This file doesn't exist"))
 
 
 def test_folder_hashes() -> None:
@@ -46,11 +46,11 @@ def test_folder_hashes() -> None:
 
 
 FAKE_DIR = {
-    "./a": "1234",
-    "./b": "4567",
-    "./folder/c": "8901",
-    "./folder/subfolder/d": "2345",
-    "./folder/subfolder/e": "XYZ",
+    "a": "1234",
+    "b": "4567",
+    "folder/c": "8901",
+    "folder/subfolder/d": "2345",
+    "folder/subfolder/e": "XYZ",
 }
 
 
@@ -67,9 +67,9 @@ def test_new_files_ignores_deletions() -> None:
 def test_new_files_finds_added_files() -> None:
     """Test that new_files returns added files."""
     added_items = {
-        "./f": "ABCD",
-        "./folder/g": "EFGH",
-        "./folder/subfolder/h": "IJKL",
+        "f": "ABCD",
+        "folder/g": "EFGH",
+        "folder/subfolder/h": "IJKL",
     }
     new_dir = FAKE_DIR | added_items
     assert set(new_files(new=new_dir, old=FAKE_DIR)) == set(added_items.keys())
@@ -78,9 +78,9 @@ def test_new_files_finds_added_files() -> None:
 def test_new_files_finds_changed_files() -> None:
     """Test that new_files returns changed files."""
     changed_items = {
-        "./a": "ABCD",
-        "./folder/c": "EFGH",
-        "./folder/subfolder/e": "IJKL",
+        "a": "ABCD",
+        "folder/c": "EFGH",
+        "folder/subfolder/e": "IJKL",
     }
     new_dir = FAKE_DIR | changed_items
     assert set(new_files(new=new_dir, old=FAKE_DIR)) == set(changed_items.keys())
@@ -99,8 +99,8 @@ def test_deleted_files_finds_all() -> None:
 def test_deleted_files_finds_deleted() -> None:
     """Test that deleted_files returns deleted files."""
     deleted = {
-        "./a",
-        "./folder/subfolder/e",
+        "a",
+        "folder/subfolder/e",
     }
     new_dir = FAKE_DIR.copy()
     for item in deleted:
@@ -111,9 +111,9 @@ def test_deleted_files_finds_deleted() -> None:
 def test_deleted_files_ignores_changed_files() -> None:
     """Test that deleted_files ignores changed files."""
     changed_items = {
-        "./a": "ABCD",
-        "./folder/c": "EFGH",
-        "./folder/subfolder/e": "IJKL",
+        "a": "ABCD",
+        "folder/c": "EFGH",
+        "folder/subfolder/e": "IJKL",
     }
     new_dir = FAKE_DIR | changed_items
     assert len(deleted_files(new=new_dir, old=FAKE_DIR)) == 0
@@ -124,17 +124,13 @@ FAKE_USER = "USER"
 FAKE_PASSWORD = "SUPER SECRET"  # noqa: S105 possible secret
 
 FULL_UPLOAD_OPERATIONS = [
-    call.mkd("."),
-    call.storbinary("STOR ./a", ANY),
-    call.mkd("."),
-    call.storbinary("STOR ./b", ANY),
-    call.mkd("."),
-    call.mkd("./folder"),
-    call.storbinary("STOR ./folder/c", ANY),
-    call.mkd("."),
-    call.mkd("./folder"),
-    call.mkd("./folder/sub"),
-    call.storbinary("STOR ./folder/sub/d", ANY),
+    call.storbinary("STOR a", ANY),
+    call.storbinary("STOR b", ANY),
+    call.mkd("folder"),
+    call.storbinary("STOR folder/c", ANY),
+    call.mkd("folder"),
+    call.mkd("folder/sub"),
+    call.storbinary("STOR folder/sub/d", ANY),
 ]
 
 
@@ -144,29 +140,32 @@ FULL_UPLOAD_OPERATIONS = [
         pytest.param(TEST_DATA_HASHES, [], id="unchanged"),
         pytest.param({}, FULL_UPLOAD_OPERATIONS, id="blank"),
         pytest.param(
-            TEST_DATA_HASHES | {"./other_folder/x": "0000"},
+            TEST_DATA_HASHES | {"other_folder/x": "0000"},
             [
-                call.delete("./other_folder/x"),
+                call.delete("other_folder/x"),
             ],
             id="delete",
         ),
         pytest.param(
-            TEST_DATA_HASHES | {"./folder/c": "CCCC"},
+            TEST_DATA_HASHES | {"folder/c": "CCCC"},
             [
-                call.mkd("."),
-                call.mkd("./folder"),
-                call.storbinary("STOR ./folder/c", ANY),
+                call.mkd("folder"),
+                call.storbinary("STOR folder/c", ANY),
             ],
             id="modified",
         ),
         pytest.param(
-            {k: v for k, v in TEST_DATA_HASHES.items() if k != "./folder/c"},
+            {k: v for k, v in TEST_DATA_HASHES.items() if k != "folder/c"},
             [
-                call.mkd("."),
-                call.mkd("./folder"),
-                call.storbinary("STOR ./folder/c", ANY),
+                call.mkd("folder"),
+                call.storbinary("STOR folder/c", ANY),
             ],
             id="added",
+        ),
+        pytest.param(
+            {f"./{k}": v for k, v in TEST_DATA_HASHES.items()},
+            [],
+            id="old-format",
         ),
     ],
 )
