@@ -214,7 +214,10 @@ def load_configuration(args: list[str]) -> argparse.Namespace:
     config = parser.parse_args(args=args)
 
     if config.netrc:
-        content = netrc.netrc()
+        try:
+            content = netrc.netrc()
+        except (FileNotFoundError, netrc.NetrcParseError) as e:
+            parser.error(f"Error loading .netrc: {e}")
         authenticators = content.authenticators(config.server)
         if authenticators is None:
             parser.error(f"Found no credentials for {config.server} in .netrc")

@@ -2,6 +2,7 @@
 
 import ftplib
 import json
+import netrc
 import os
 from pathlib import Path
 from typing import Any
@@ -343,3 +344,22 @@ def test_netrc_user_mismatch(capsys: pytest.CaptureFixture) -> None:
         assert "Traceback" not in captured.err
         assert "do not match" in captured.err
 
+@pytest.mark.parametrize("error", [FileNotFoundError, netrc.NetrcParseError("test")])
+def test_netrc_no_file(capsys: pytest.CaptureFixture, error: Exception) -> None:
+    """Test that common .netrc errors are reported neatly, without traceback."""
+    args = [
+        "--netrc",
+        FAKE_SERVER,
+    ]
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("netrc.netrc") as mock_netrc_class,
+    ):
+        mock_netrc_class.side_effect = error
+
+        with pytest.raises(SystemExit):
+            main(args)
+        assert mock_ftp_class.mock_calls == []
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.err
+        assert ".netrc" in captured.err
