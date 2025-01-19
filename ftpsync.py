@@ -56,6 +56,7 @@ def deleted_files(new: dict[str, str], old: dict[str, str]) -> list[str]:
     """
     return sorted([f for f in old if f not in new])
 
+
 def normalize_paths(hashes: dict[str, str]) -> dict[str, str]:
     """Strip leading './' from the paths in hashes.
 
@@ -69,9 +70,11 @@ def normalize_paths(hashes: dict[str, str]) -> dict[str, str]:
     """
     return {k.removeprefix("./"): v for k, v in hashes.items()}
 
+
 def get_folders(hashes: dict[str, str]) -> set[str]:
     """Get the set of folders containing from the paths in hashes."""
-    return set(*[(str(folder)for p in hashes for folder in Path(p).parents)])
+    return set(*[(str(folder) for p in hashes for folder in Path(p).parents)])
+
 
 class FtpSynchronizer:
     """Class to manage synchronization of a local directory to a remote FTP server."""

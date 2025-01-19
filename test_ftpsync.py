@@ -298,6 +298,7 @@ def test_netrc() -> None:
             call.__exit__(None, None, None),
         ]
 
+
 def test_netrc_no_credentials(capsys: pytest.CaptureFixture) -> None:
     """Test that missing credentials in .netrc report an appropriate error."""
     args = [
@@ -316,6 +317,7 @@ def test_netrc_no_credentials(capsys: pytest.CaptureFixture) -> None:
         captured = capsys.readouterr()
         assert "Traceback" not in captured.err
         assert "no credentials" in captured.err
+
 
 def test_netrc_user_mismatch(capsys: pytest.CaptureFixture) -> None:
     """Test user name mismatch between command line and .netrc.
@@ -343,6 +345,7 @@ def test_netrc_user_mismatch(capsys: pytest.CaptureFixture) -> None:
         captured = capsys.readouterr()
         assert "Traceback" not in captured.err
         assert "do not match" in captured.err
+
 
 @pytest.mark.parametrize("error", [FileNotFoundError, netrc.NetrcParseError("test")])
 def test_netrc_no_file(capsys: pytest.CaptureFixture, error: Exception) -> None:
