@@ -69,16 +69,22 @@ def normalize_paths(hashes: dict[str, str]) -> dict[str, str]:
     """
     return {k.removeprefix("./"): v for k, v in hashes.items()}
 
+def get_folders(hashes: dict[str, str]) -> set[str]:
+    """Get the set of folders containing from the paths in hashes."""
+    return set(*[(str(folder)for p in hashes for folder in Path(p).parents)])
+
 class FtpSynchronizer:
     """Class to manage synchronization of a local directory to a remote FTP server."""
 
     ftp: ftplib.FTP_TLS
     config: argparse.Namespace
+    already_created_folders: set[str]
 
     def __init__(self, ftp: ftplib.FTP_TLS, config: argparse.Namespace) -> None:
         """Create a synchronizer with the given FTP client and configuration."""
         self.ftp = ftp
         self.config = config
+        self.already_created_folders = set()
 
     def load_hashes(self) -> dict[str, str] | None:
         """Load the hashes from the hashfile on the server."""
@@ -113,9 +119,10 @@ class FtpSynchronizer:
     def create_parent_folder(self, path: str) -> None:
         """Create the parent folder for path, if it doesn't exist yet."""
         folder, _ = os.path.split(path)
-        if folder:
+        if folder and folder not in self.already_created_folders:
             try:
                 self.create_parent_folder(folder)
+                self.already_created_folders.add(folder)
                 self.ftp.mkd(folder)
             except ftplib.error_perm:
                 pass
@@ -142,6 +149,7 @@ class FtpSynchronizer:
     def upload_changed(self, old_hashes: dict[str, str]) -> None:
         """Upload all changes to the server, mirroring the local content."""
         self.ftp.delete(self.config.hashfile)
+        self.already_created_folders = get_folders(old_hashes)
         new_hashes = folder_hashes()
         paths = new_files(new_hashes, old_hashes)
         self.upload_files(paths)

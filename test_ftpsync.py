@@ -128,7 +128,6 @@ FULL_UPLOAD_OPERATIONS = [
     call.storbinary("STOR b", ANY),
     call.mkd("folder"),
     call.storbinary("STOR folder/c", ANY),
-    call.mkd("folder"),
     call.mkd("folder/sub"),
     call.storbinary("STOR folder/sub/d", ANY),
 ]
@@ -149,7 +148,6 @@ FULL_UPLOAD_OPERATIONS = [
         pytest.param(
             TEST_DATA_HASHES | {"folder/c": "CCCC"},
             [
-                call.mkd("folder"),
                 call.storbinary("STOR folder/c", ANY),
             ],
             id="modified",
@@ -157,7 +155,6 @@ FULL_UPLOAD_OPERATIONS = [
         pytest.param(
             {k: v for k, v in TEST_DATA_HASHES.items() if k != "folder/c"},
             [
-                call.mkd("folder"),
                 call.storbinary("STOR folder/c", ANY),
             ],
             id="added",
