@@ -24,5 +24,4 @@ ignore = [
     "D203", # incompatible with D211
     "D213", # incompatible with D213
     "T201", # print statements
-    #"PTH",  # Use pathlib instead of string paths, 
 ]
