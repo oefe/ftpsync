@@ -296,3 +296,50 @@ def test_netrc() -> None:
             call.storlines("STOR .hashes.json", ANY),
             call.__exit__(None, None, None),
         ]
+
+def test_netrc_no_credentials(capsys: pytest.CaptureFixture) -> None:
+    """Test that missing credentials in .netrc report an appropriate error."""
+    args = [
+        "--netrc",
+        FAKE_SERVER,
+    ]
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("netrc.netrc") as mock_netrc_class,
+    ):
+        mock_netrc_class.return_value.authenticators.return_value = None
+
+        with pytest.raises(SystemExit):
+            main(args)
+        assert mock_ftp_class.mock_calls == []
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.err
+        assert "no credentials" in captured.err
+
+def test_netrc_user_mismatch(capsys: pytest.CaptureFixture) -> None:
+    """Test user name mismatch between command line and .netrc.
+
+    This should report an appropriate error.
+    """
+    args = [
+        "--user",
+        FAKE_USER,
+        "--netrc",
+        FAKE_SERVER,
+    ]
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("netrc.netrc") as mock_netrc_class,
+    ):
+        mock_netrc_class.return_value.authenticators.return_value = (
+            "someone else",
+            "",
+            "super secret",
+        )
+        with pytest.raises(SystemExit):
+            main(args)
+        assert mock_ftp_class.mock_calls == []
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.err
+        assert "do not match" in captured.err
+
