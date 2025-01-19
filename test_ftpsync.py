@@ -257,3 +257,42 @@ def test_full_upload_mocked() -> None:
             call.storlines("STOR .hashes.json", ANY),
             call.__exit__(None, None, None),
         ]
+
+
+def test_netrc() -> None:
+    """Test loading credentials from .netrc."""
+    args = [
+        "--netrc",
+        "--source",
+        str(Path(__file__).parent / TEST_DATA_FOLDER),
+        FAKE_SERVER,
+    ]
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("io.StringIO") as mock_string_io_class,
+        patch("netrc.netrc") as mock_netrc_class,
+    ):
+        ftp = mock_ftp_class.return_value
+        ftp.__enter__.return_value = ftp
+        io = mock_string_io_class.return_value
+        io.read.return_value = json.dumps(TEST_DATA_HASHES)
+        mock_netrc_class.return_value.authenticators.return_value = (
+            FAKE_USER,
+            "",
+            FAKE_PASSWORD,
+        )
+
+        main(args)
+
+        assert ftp.mock_calls == [
+            call.__enter__(),
+            call.connect(FAKE_SERVER),
+            call.login(FAKE_USER, FAKE_PASSWORD),
+            call.set_debuglevel(0),
+            call.prot_p(),
+            call.cwd("html"),
+            call.retrlines("RETR .hashes.json", io.write),
+            call.delete(".hashes.json"),
+            call.storlines("STOR .hashes.json", ANY),
+            call.__exit__(None, None, None),
+        ]
