@@ -207,7 +207,7 @@ def test_incremental_mocked(hashes: dict[str, str], operations: list[Any]) -> No
 
 
 
-def test_folder_exists() -> None:
+def test_folder_exists_mocked() -> None:
     """Test handling of already existing folder during incremental upload.
 
     Uses a mocked FTP class.
