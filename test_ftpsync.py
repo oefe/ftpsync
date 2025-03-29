@@ -206,6 +206,50 @@ def test_incremental_mocked(hashes: dict[str, str], operations: list[Any]) -> No
         ]
 
 
+
+def test_folder_exists() -> None:
+    """Test handling of already existing folder during incremental upload.
+
+    Uses a mocked FTP class.
+    """
+    args = [
+        "--user",
+        FAKE_USER,
+        "--password",
+        FAKE_PASSWORD,
+        "--source",
+        str(Path(__file__).parent / TEST_DATA_FOLDER),
+        FAKE_SERVER,
+    ]
+    hashes = {k: v for k, v in TEST_DATA_HASHES.items() if k != "folder/sub/d"}
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("io.StringIO") as mock_string_io_class,
+    ):
+        ftp = mock_ftp_class.return_value
+        ftp.__enter__.return_value = ftp
+        ftp.mkd.side_effect = ftplib.error_perm
+        io = mock_string_io_class.return_value
+        io.read.return_value = json.dumps(hashes)
+        main(args)
+
+        assert ftp.mock_calls == [
+            call.__enter__(),
+            call.connect(FAKE_SERVER),
+            call.login(FAKE_USER, FAKE_PASSWORD),
+            call.set_debuglevel(0),
+            call.prot_p(),
+            call.cwd("html"),
+            call.retrlines("RETR .hashes.json", io.write),
+            call.delete(".hashes.json"),
+            call.mkd("folder/sub"),
+            call.storbinary("STOR folder/sub/d", ANY),
+            call.storlines("STOR .hashes.json", ANY),
+            call.__exit__(None, None, None),
+        ]
+
+
+
 def test_full_upload_mocked() -> None:
     """Test full upload (hash file absent).
 
