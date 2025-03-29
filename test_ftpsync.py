@@ -303,6 +303,59 @@ def test_full_upload_mocked() -> None:
             call.__exit__(None, None, None),
         ]
 
+def test_json_error_mocked() -> None:
+    """Test full upload (invalid hash file).
+
+    Uses a mocked FTP class.
+    """
+    args = [
+        "--user",
+        FAKE_USER,
+        "--password",
+        FAKE_PASSWORD,
+        "--source",
+        str(Path(__file__).parent / TEST_DATA_FOLDER),
+        FAKE_SERVER,
+    ]
+    with (
+        patch("ftplib.FTP_TLS") as mock_ftp_class,
+        patch("io.StringIO") as mock_string_io_class,
+    ):
+        ftp = mock_ftp_class.return_value
+        ftp.__enter__.return_value = ftp
+        io = mock_string_io_class.return_value
+        io.read.return_value = "{"
+        ftp.mlsd.side_effect = [
+            [
+                ("file1", {"type": "file"}),
+                ("file2", {"type": "file"}),
+                ("folder", {"type": "dir"}),
+            ],
+            [
+                ("child", {"type": "file"}),
+            ],
+        ]
+        main(args)
+
+        assert ftp.mock_calls == [
+            call.__enter__(),
+            call.connect(FAKE_SERVER),
+            call.login(FAKE_USER, FAKE_PASSWORD),
+            call.set_debuglevel(0),
+            call.prot_p(),
+            call.cwd("html"),
+            call.retrlines("RETR .hashes.json", io.write),
+            call.mlsd("", facts=["type"]),
+            call.delete("file1"),
+            call.delete("file2"),
+            call.mlsd("folder", facts=["type"]),
+            call.delete("folder/child"),
+            call.rmd("folder"),
+            *FULL_UPLOAD_OPERATIONS,
+            call.storlines("STOR .hashes.json", ANY),
+            call.__exit__(None, None, None),
+        ]
+
 
 def test_netrc() -> None:
     """Test loading credentials from .netrc."""
