@@ -245,4 +245,4 @@ def main(args: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:]) #pragma: no cover
+    main(sys.argv[1:])  # pragma: no cover

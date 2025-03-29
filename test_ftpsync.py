@@ -206,7 +206,6 @@ def test_incremental_mocked(hashes: dict[str, str], operations: list[Any]) -> No
         ]
 
 
-
 def test_folder_exists_mocked() -> None:
     """Test handling of already existing folder during incremental upload.
 
@@ -247,7 +246,6 @@ def test_folder_exists_mocked() -> None:
             call.storlines("STOR .hashes.json", ANY),
             call.__exit__(None, None, None),
         ]
-
 
 
 def test_full_upload_mocked() -> None:
@@ -302,6 +300,7 @@ def test_full_upload_mocked() -> None:
             call.storlines("STOR .hashes.json", ANY),
             call.__exit__(None, None, None),
         ]
+
 
 def test_json_error_mocked() -> None:
     """Test full upload (invalid hash file).
