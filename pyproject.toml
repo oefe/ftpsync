@@ -1,3 +1,4 @@
+# Copyright (c) 2020 Martina Oefelein
 [project]
 name = "ftpsync"
 version = "0.2.0"
