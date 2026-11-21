@@ -1,3 +1,4 @@
+# Copyright (c) 2020 Martina Oefelein
 """Unit tests."""
 
 import ftplib

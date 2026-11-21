@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# Copyright (c) 2020 Martina Oefelein
 
 """A caching website uploader using FTPS.
 
