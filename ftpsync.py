@@ -113,11 +113,11 @@ class FtpSynchronizer:
         for name, facts in self.ftp.mlsd(path, facts=["type"]):
             subpath = str(Path(path) / name)
             if facts["type"] == "file":
-                print("Delete:", subpath)
+                print("Delete:", subpath, flush=True)
                 self.ftp.delete(subpath)
             elif facts["type"] == "dir":
                 self.delete_contents(subpath)
-                print("Delete dir:", subpath)
+                print("Delete dir:", subpath, flush=True)
                 self.ftp.rmd(subpath)
 
     def create_parent_folder(self, path: str) -> None:
@@ -136,7 +136,7 @@ class FtpSynchronizer:
         for path in paths:
             self.create_parent_folder(path)
             with Path(path).open("rb") as file:
-                print("Upload:", path)
+                print("Upload:", path, flush=True)
                 self.ftp.storbinary("STOR " + path, file)
 
     def upload_all(self) -> None:
@@ -158,7 +158,7 @@ class FtpSynchronizer:
         paths = new_files(new_hashes, old_hashes)
         self.upload_files(paths)
         for path in deleted_files(new_hashes, old_hashes):
-            print("Delete:", path)
+            print("Delete:", path, flush=True)
             self.ftp.delete(path)
         self.save_hashes(new_hashes)
 
@@ -173,10 +173,10 @@ class FtpSynchronizer:
         self.ftp.cwd(self.config.destination)
         old_hashes = self.load_hashes()
         if old_hashes is None:
-            print("No hash file found. Performing full upload")
+            print("No hash file found. Performing full upload", flush=True)
             self.upload_all()
         else:
-            print("Synchronizing changes")
+            print("Synchronizing changes", flush=True)
             self.upload_changed(old_hashes)
 
 
